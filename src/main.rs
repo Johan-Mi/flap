@@ -21,7 +21,10 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
-        Op::Select => todo!(),
+        Op::Select => {
+            let [a, b] = g2(s);
+            s.push(b.iter().map(|&i| a[usize::try_from(i).unwrap()]).collect());
+        }
         Op::Keep => todo!(),
         Op::Fold(_) => todo!(),
         Op::Scan(_) => todo!(),
@@ -32,8 +35,12 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
     }
 }
 
+fn g2(s: &mut Vec<Box<[i32]>>) -> [Box<[i32]>; 2] {
+    std::array::from_fn(|_| s.pop().unwrap())
+}
+
 fn p2(s: &mut Vec<Box<[i32]>>, f: fn(i32, i32) -> i32) {
-    let [a, b] = std::array::from_fn(|_| s.pop().unwrap());
+    let [a, b] = g2(s);
     assert!(a.len() == b.len());
     s.push(std::iter::zip(a, b).map(|(a, b)| f(a, b)).collect());
 }
