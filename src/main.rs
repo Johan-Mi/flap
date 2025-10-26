@@ -25,7 +25,12 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
             let [a, b] = g2(s);
             s.push(b.iter().map(|&i| a[usize::try_from(i).unwrap()]).collect());
         }
-        Op::Keep => todo!(),
+        Op::Keep => {
+            let [a, b] = g2(s);
+            assert_eq!(a.len(), b.len());
+            let k = std::iter::zip(a, b).filter_map(|(a, b)| (b != 0).then_some(a));
+            s.push(k.collect());
+        }
         Op::Fold(_) => todo!(),
         Op::Scan(_) => todo!(),
         Op::Fill(_) => todo!(),
