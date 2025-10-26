@@ -41,7 +41,7 @@ fn g2(s: &mut Vec<Box<[i32]>>) -> [Box<[i32]>; 2] {
 
 fn p2(s: &mut Vec<Box<[i32]>>, f: fn(i32, i32) -> i32) {
     let [a, b] = g2(s);
-    assert!(a.len() == b.len());
+    assert_eq!(a.len(), b.len());
     s.push(std::iter::zip(a, b).map(|(a, b)| f(a, b)).collect());
 }
 
