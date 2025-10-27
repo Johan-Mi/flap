@@ -16,7 +16,13 @@ enum Op {
     Bracket(Box<[Box<[Op]>]>),
 }
 
-fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
+fn x(ops: &[Op], s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
+    for op in ops {
+        x1(op, s, fill);
+    }
+}
+
+fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
     match op {
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
@@ -33,7 +39,7 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
         }
         Op::Fold(_) => todo!(),
         Op::Scan(_) => todo!(),
-        Op::Fill(_) => todo!(),
+        Op::Fill([fill, b]) => x(b, s, Some(fill)),
         Op::Id => {}
         Op::Fork(_) => todo!(),
         Op::Bracket(_) => todo!(),
