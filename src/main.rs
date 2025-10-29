@@ -45,7 +45,22 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
                 x(f, s, None);
             }
         }
-        Op::Scan(_) => todo!(),
+        Op::Scan(f) => {
+            let [v] = g(s);
+            let mut w = Vec::with_capacity(v.len());
+            let mut v = v.into_iter();
+            if let Some(init) = v.next() {
+                w.push(init);
+                s.push(Box::new([init]));
+                for a in v {
+                    s.push(Box::new([a]));
+                    x(f, s, None);
+                    w.push(s.last().unwrap()[0]);
+                }
+                let _: Box<[i32]> = s.pop().unwrap();
+            }
+            s.push(w.into());
+        }
         Op::Fill([fill, b]) => x(b, s, Some(fill)),
         Op::Id => {}
         Op::Fork(_) => todo!(),
