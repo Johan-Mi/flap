@@ -37,7 +37,14 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
             let k = std::iter::zip(a, b).filter_map(|(a, b)| (b != 0).then_some(a));
             s.push(k.collect());
         }
-        Op::Fold(_) => todo!(),
+        Op::Fold(f) => {
+            let [v] = g(s);
+            x(fill.unwrap(), s, None);
+            for a in v {
+                s.push(Box::new([a]));
+                x(f, s, None);
+            }
+        }
         Op::Scan(_) => todo!(),
         Op::Fill([fill, b]) => x(b, s, Some(fill)),
         Op::Id => {}
