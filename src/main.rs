@@ -37,12 +37,15 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
             s.push(k.collect());
         }
         Op::Fold(f) => {
-            let [init, v] = g(s);
-            s.push(init);
-            for a in v {
-                s.push(Box::new([a]));
-                x(f, s);
+            let [v] = g(s);
+            let mut v: Vec<Box<[i32]>> = v
+                .into_iter()
+                .map(|it| Box::new([it]) as Box<[i32]>)
+                .collect();
+            for _ in 0..v.len().checked_sub(1).unwrap() {
+                x(f, &mut v);
             }
+            s.push(v.pop().unwrap());
         }
         Op::Scan(f) => {
             let [v] = g(s);
