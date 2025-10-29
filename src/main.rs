@@ -67,7 +67,15 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
         }
         Op::Id => {}
         Op::Fork(_) => todo!(),
-        Op::Bracket(_) => todo!(),
+        Op::Bracket(f) => {
+            let mut v = Vec::new();
+            for f in f {
+                let [_, o] = s_(f);
+                x(f, s);
+                v.extend(s.drain(s.len() - o..));
+            }
+            s.extend(v);
+        }
     }
 }
 
