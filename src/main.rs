@@ -28,11 +28,11 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
         Op::Select => {
-            let [a, b] = g2(s);
+            let [a, b] = g(s);
             s.push(b.iter().map(|&i| a[usize::try_from(i).unwrap()]).collect());
         }
         Op::Keep => {
-            let [a, b] = g2(s);
+            let [a, b] = g(s);
             assert_eq!(a.len(), b.len());
             let k = std::iter::zip(a, b).filter_map(|(a, b)| (b != 0).then_some(a));
             s.push(k.collect());
@@ -46,12 +46,12 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
     }
 }
 
-fn g2(s: &mut Vec<Box<[i32]>>) -> [Box<[i32]>; 2] {
+fn g<const N: usize>(s: &mut Vec<Box<[i32]>>) -> [Box<[i32]>; N] {
     std::array::from_fn(|_| s.pop().unwrap())
 }
 
 fn p2(s: &mut Vec<Box<[i32]>>, f: fn(i32, i32) -> i32) {
-    let [a, b] = g2(s);
+    let [a, b] = g(s);
     assert_eq!(a.len(), b.len());
     s.push(std::iter::zip(a, b).map(|(a, b)| f(a, b)).collect());
 }
