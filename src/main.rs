@@ -10,19 +10,18 @@ enum Op {
     Keep,
     Fold(Box<[Op]>),
     Scan(Box<[Op]>),
-    Fill([Box<[Op]>; 2]),
     Id,
     Fork(Box<[Box<[Op]>]>),
     Bracket(Box<[Box<[Op]>]>),
 }
 
-fn x(ops: &[Op], s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
+fn x(ops: &[Op], s: &mut Vec<Box<[i32]>>) {
     for op in ops {
-        x1(op, s, fill);
+        x1(op, s);
     }
 }
 
-fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
+fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
     match op {
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
@@ -38,11 +37,11 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
             s.push(k.collect());
         }
         Op::Fold(f) => {
-            let [v] = g(s);
-            x(fill.unwrap(), s, None);
+            let [init, v] = g(s);
+            s.push(init);
             for a in v {
                 s.push(Box::new([a]));
-                x(f, s, None);
+                x(f, s);
             }
         }
         Op::Scan(f) => {
@@ -54,14 +53,13 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>, fill: Option<&[Op]>) {
                 s.push(Box::new([init]));
                 for a in v {
                     s.push(Box::new([a]));
-                    x(f, s, None);
+                    x(f, s);
                     w.push(s.last().unwrap()[0]);
                 }
                 let _: Box<[i32]> = s.pop().unwrap();
             }
             s.push(w.into());
         }
-        Op::Fill([fill, b]) => x(b, s, Some(fill)),
         Op::Id => {}
         Op::Fork(_) => todo!(),
         Op::Bracket(_) => todo!(),
@@ -89,11 +87,7 @@ fn s1(op: &Op) -> [usize; 2] {
         Op::Add | Op::Sub | Op::Mul | Op::Select | Op::Keep => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
             assert!(s(v) == [2, 1]);
-            [1, 1]
-        }
-        Op::Fill([f, v]) => {
-            assert!(s(f) == [0, 1]);
-            s(v)
+            [2, 1]
         }
         Op::Id => [1, 1],
         Op::Fork(vs) => vs
