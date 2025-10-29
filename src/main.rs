@@ -81,7 +81,7 @@ fn p2(s: &mut Vec<Box<[i32]>>, f: fn(i32, i32) -> i32) {
     s.push(std::iter::zip(a, b).map(|(a, b)| f(a, b)).collect());
 }
 
-fn s(ops: &[Op]) -> [usize; 2] {
+fn s_(ops: &[Op]) -> [usize; 2] {
     ops.iter().map(s1).fold([0, 0], |[i_, o_], [i, o]| {
         [i_ + i.saturating_sub(o_), o + o_.saturating_sub(i)]
     })
@@ -92,17 +92,17 @@ fn s1(op: &Op) -> [usize; 2] {
         Op::Push(_) => [0, 1],
         Op::Add | Op::Sub | Op::Mul | Op::Select | Op::Keep => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
-            assert!(s(v) == [2, 1]);
+            assert!(s_(v) == [2, 1]);
             [2, 1]
         }
         Op::Id => [1, 1],
         Op::Fork(vs) => vs
             .iter()
-            .map(|v| s(v))
+            .map(|v| s_(v))
             .fold([0, 0], |[i1, o1], [i2, o2]| [i1.max(i2), o1 + o2]),
         Op::Bracket(vs) => vs
             .iter()
-            .map(|v| s(v))
+            .map(|v| s_(v))
             .fold([0, 0], |[i1, o1], [i2, o2]| [i1 + i2, o1 + o2]),
     }
 }
