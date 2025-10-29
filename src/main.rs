@@ -30,12 +30,12 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
         Op::Mul => p2(s, std::ops::Mul::mul),
         Op::Select => {
             let [a, b] = g(s);
-            s.push(b.iter().map(|&i| a[usize::try_from(i).unwrap()]).collect());
+            s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect());
         }
         Op::Keep => {
             let [a, b] = g(s);
             assert_eq!(a.len(), b.len());
-            let k = std::iter::zip(a, b).filter_map(|(a, b)| (b != 0).then_some(a));
+            let k = std::iter::zip(a, b).filter_map(|(a, b)| (a != 0).then_some(b));
             s.push(k.collect());
         }
         Op::Fold(f) => {
