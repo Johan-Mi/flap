@@ -3,6 +3,7 @@ fn main() {
 }
 
 enum Op {
+    Push(Box<[i32]>),
     Add,
     Sub,
     Mul,
@@ -23,6 +24,7 @@ fn x(ops: &[Op], s: &mut Vec<Box<[i32]>>) {
 
 fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
     match op {
+        Op::Push(v) => s.push(v.clone()),
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
@@ -87,6 +89,7 @@ fn s(ops: &[Op]) -> [usize; 2] {
 
 fn s1(op: &Op) -> [usize; 2] {
     match op {
+        Op::Push(_) => [0, 1],
         Op::Add | Op::Sub | Op::Mul | Op::Select | Op::Keep => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
             assert!(s(v) == [2, 1]);
