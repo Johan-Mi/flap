@@ -66,7 +66,15 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
             s.push(w.into());
         }
         Op::Id => {}
-        Op::Fork(_) => todo!(),
+        Op::Fork(f) => {
+            let mut v = Vec::new();
+            for f in f {
+                let [i, _] = s_(f);
+                v.extend(s[s.len() - i..].iter().cloned());
+                x(f, s);
+            }
+            s.extend(v);
+        }
         Op::Bracket(f) => {
             let mut v = Vec::new();
             for f in f {
