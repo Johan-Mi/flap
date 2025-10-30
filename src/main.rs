@@ -71,8 +71,9 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
             for f in f {
                 let [i, _] = s_(f);
                 v.extend(s[s.len() - i..].iter().cloned());
-                x(f, s);
+                x(f, &mut v);
             }
+            s.truncate(s.len() - s1(op)[0]);
             s.extend(v);
         }
         Op::Bracket(f) => {
