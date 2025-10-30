@@ -109,7 +109,7 @@ fn s1(op: &Op) -> [usize; 2] {
         Op::Add | Op::Sub | Op::Mul | Op::Select | Op::Keep => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
             assert!(s_(v) == [2, 1]);
-            [2, 1]
+            [1, 1]
         }
         Op::Id => [1, 1],
         Op::Fork(vs) => vs
