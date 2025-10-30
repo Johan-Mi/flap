@@ -37,7 +37,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             let [a, b] = g(s);
             assert_eq!(a.len(), b.len());
             let f = |(a, b)| std::iter::repeat_n(b, usize::try_from(a).unwrap());
-            s.push(std::iter::zip(a, b).flat_map(f).collect());
+            s.push(c(a, b).flat_map(f).collect());
         }
         Op::Iota => {
             let [i] = g(s);
