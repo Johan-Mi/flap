@@ -104,7 +104,7 @@ fn p2(s: &mut Vec<Vec<i32>>, f: fn(i32, i32) -> i32) {
 }
 
 fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
-    let len = a.len().min(b.len());
+    let len = a.len().max(b.len());
     a.into_iter().cycle().zip(b.into_iter().cycle()).take(len)
 }
 
