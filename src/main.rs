@@ -65,7 +65,7 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
                 for a in v {
                     s.push(Box::new([a]));
                     x(f, s);
-                    w.push(s.last().unwrap()[0]);
+                    w.extend(s.last().unwrap());
                 }
                 let _: Box<[i32]> = s.pop().unwrap();
             }
