@@ -3,27 +3,27 @@ fn main() {
 }
 
 enum Op {
-    Push(Box<[i32]>),
+    Push(Vec<i32>),
     Add,
     Sub,
     Mul,
     Select,
     Keep,
     Iota,
-    Fold(Box<[Op]>),
-    Scan(Box<[Op]>),
+    Fold(Vec<Op>),
+    Scan(Vec<Op>),
     Id,
-    Fork(Box<[Box<[Op]>]>),
-    Bracket(Box<[Box<[Op]>]>),
+    Fork(Vec<Vec<Op>>),
+    Bracket(Vec<Vec<Op>>),
 }
 
-fn x(ops: &[Op], s: &mut Vec<Box<[i32]>>) {
+fn x(ops: &[Op], s: &mut Vec<Vec<i32>>) {
     for op in ops {
         x1(op, s);
     }
 }
 
-fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
+fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
     match op {
         Op::Push(v) => s.push(v.clone()),
         Op::Add => p2(s, std::ops::Add::add),
@@ -41,14 +41,14 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
         }
         Op::Iota => {
             let [i] = g(s);
-            let [i] = *<Box<[_; _]>>::try_from(i).unwrap();
+            let [i] = <[_; _]>::try_from(i).unwrap();
             s.push((0..i).collect());
         }
         Op::Fold(f) => {
             let [v] = g(s);
-            let mut v: Vec<Box<[i32]>> = v
+            let mut v: Vec<Vec<i32>> = v
                 .into_iter()
-                .map(|it| Box::new([it]) as Box<[i32]>)
+                .map(|it| Vec::from([it]) as Vec<i32>)
                 .collect();
             for _ in 0..v.len().checked_sub(1).unwrap() {
                 x(f, &mut v);
@@ -61,15 +61,15 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
             let mut v = v.into_iter();
             if let Some(init) = v.next() {
                 w.push(init);
-                s.push(Box::new([init]));
+                s.push(Vec::from([init]));
                 for a in v {
-                    s.push(Box::new([a]));
+                    s.push(Vec::from([a]));
                     x(f, s);
                     w.extend(s.last().unwrap());
                 }
-                let _: Box<[i32]> = s.pop().unwrap();
+                let _: Vec<i32> = s.pop().unwrap();
             }
-            s.push(w.into());
+            s.push(w);
         }
         Op::Id => {}
         Op::Fork(f) => {
@@ -94,11 +94,11 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
     }
 }
 
-fn g<const N: usize>(s: &mut Vec<Box<[i32]>>) -> [Box<[i32]>; N] {
+fn g<const N: usize>(s: &mut Vec<Vec<i32>>) -> [Vec<i32>; N] {
     std::array::from_fn(|_| s.pop().unwrap())
 }
 
-fn p2(s: &mut Vec<Box<[i32]>>, f: fn(i32, i32) -> i32) {
+fn p2(s: &mut Vec<Vec<i32>>, f: fn(i32, i32) -> i32) {
     let [a, b] = g(s);
     assert_eq!(a.len(), b.len());
     s.push(std::iter::zip(a, b).map(|(a, b)| f(a, b)).collect());
