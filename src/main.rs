@@ -9,6 +9,7 @@ enum Op {
     Mul,
     Select,
     Keep,
+    Iota,
     Fold(Box<[Op]>),
     Scan(Box<[Op]>),
     Id,
@@ -37,6 +38,11 @@ fn x1(op: &Op, s: &mut Vec<Box<[i32]>>) {
             assert_eq!(a.len(), b.len());
             let k = std::iter::zip(a, b).filter_map(|(a, b)| (a != 0).then_some(b));
             s.push(k.collect());
+        }
+        Op::Iota => {
+            let [i] = g(s);
+            let [i] = *<Box<[_; _]>>::try_from(i).unwrap();
+            s.push((0..i).collect());
         }
         Op::Fold(f) => {
             let [v] = g(s);
@@ -112,7 +118,7 @@ fn s1(op: &Op) -> [usize; 2] {
             assert!(s_(v) == [2, 1]);
             [1, 1]
         }
-        Op::Id => [1, 1],
+        Op::Iota | Op::Id => [1, 1],
         Op::Fork(vs) => vs
             .iter()
             .map(|v| s_(v))
