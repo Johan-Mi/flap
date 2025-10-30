@@ -100,8 +100,9 @@ fn g<const N: usize>(s: &mut Vec<Vec<i32>>) -> [Vec<i32>; N] {
 
 fn p2(s: &mut Vec<Vec<i32>>, f: fn(i32, i32) -> i32) {
     let [a, b] = g(s);
-    assert_eq!(a.len(), b.len());
-    s.push(std::iter::zip(a, b).map(|(a, b)| f(a, b)).collect());
+    let len = a.len().min(b.len());
+    let ab = a.into_iter().cycle().zip(b.into_iter().cycle());
+    s.push(ab.take(len).map(|(a, b)| f(a, b)).collect());
 }
 
 fn s_(ops: &[Op]) -> [usize; 2] {
