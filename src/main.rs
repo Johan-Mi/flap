@@ -13,6 +13,7 @@ enum Op {
     Fold(Vec<Op>),
     Scan(Vec<Op>),
     Id,
+    Pop,
     Fork(Vec<Vec<Op>>),
     Bracket(Vec<Vec<Op>>),
 }
@@ -72,6 +73,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             s.push(w);
         }
         Op::Id => {}
+        Op::Pop => _ = s.pop().unwrap(),
         Op::Fork(f) => {
             let mut v = Vec::new();
             for f in f {
@@ -123,6 +125,7 @@ fn s1(op: &Op) -> [usize; 2] {
             [1, 1]
         }
         Op::Iota | Op::Id => [1, 1],
+        Op::Pop => [1, 0],
         Op::Fork(vs) => vs
             .iter()
             .map(|v| s_(v))
