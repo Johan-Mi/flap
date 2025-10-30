@@ -7,6 +7,8 @@ enum Op {
     Add,
     Sub,
     Mul,
+    Min,
+    Max,
     Select,
     Keep,
     Iota,
@@ -30,6 +32,8 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
+        Op::Min => p2(s, Ord::min),
+        Op::Max => p2(s, Ord::max),
         Op::Select => {
             let [a, b] = g(s);
             s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect());
@@ -119,7 +123,7 @@ fn s_(ops: &[Op]) -> [usize; 2] {
 fn s1(op: &Op) -> [usize; 2] {
     match op {
         Op::Push(_) => [0, 1],
-        Op::Add | Op::Sub | Op::Mul | Op::Select | Op::Keep => [2, 1],
+        Op::Add | Op::Sub | Op::Mul | Op::Min | Op::Max | Op::Select | Op::Keep => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
             assert!(s_(v) == [2, 1]);
             [1, 1]
