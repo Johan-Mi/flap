@@ -100,9 +100,12 @@ fn g<const N: usize>(s: &mut Vec<Vec<i32>>) -> [Vec<i32>; N] {
 
 fn p2(s: &mut Vec<Vec<i32>>, f: fn(i32, i32) -> i32) {
     let [a, b] = g(s);
+    s.push(c(a, b).map(|(a, b)| f(a, b)).collect());
+}
+
+fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
     let len = a.len().min(b.len());
-    let ab = a.into_iter().cycle().zip(b.into_iter().cycle());
-    s.push(ab.take(len).map(|(a, b)| f(a, b)).collect());
+    a.into_iter().cycle().zip(b.into_iter().cycle()).take(len)
 }
 
 fn s_(ops: &[Op]) -> [usize; 2] {
