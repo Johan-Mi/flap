@@ -41,7 +41,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         }
         Op::Iota => {
             let [i] = g(s);
-            let [i] = <[_; _]>::try_from(i).unwrap();
+            let [i] = i.try_into().unwrap();
             s.push((0..i).collect());
         }
         Op::Fold(f) => {
