@@ -13,6 +13,8 @@ enum Op {
     Keep,
     Iota,
     Reverse,
+    Rise,
+    Fall,
     Fold(Vec<Op>),
     Scan(Vec<Op>),
     Id,
@@ -51,6 +53,18 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             s.push((0..i).collect());
         }
         Op::Reverse => s.last_mut().unwrap().reverse(),
+        Op::Rise => {
+            let [a] = g(s);
+            let mut i: Vec<_> = (0..a.len().try_into().unwrap()).collect();
+            i.sort_by_key(|&i| a[usize::try_from(i).unwrap()]);
+            s.push(i);
+        }
+        Op::Fall => {
+            let [a] = g(s);
+            let mut i: Vec<_> = (0..a.len().try_into().unwrap()).collect();
+            i.sort_by_key(|&i| std::cmp::Reverse(a[usize::try_from(i).unwrap()]));
+            s.push(i);
+        }
         Op::Fold(f) => {
             let [v] = g(s);
             let mut v: Vec<Vec<i32>> = v
@@ -130,7 +144,7 @@ fn s1(op: &Op) -> [usize; 2] {
             assert!(s_(v) == [2, 1]);
             [1, 1]
         }
-        Op::Iota | Op::Reverse | Op::Id => [1, 1],
+        Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => [1, 1],
         Op::Pop => [1, 0],
         Op::Fork(vs) => vs
             .iter()
