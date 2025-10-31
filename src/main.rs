@@ -71,7 +71,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
                 .into_iter()
                 .map(|it| Vec::from([it]) as Vec<i32>)
                 .collect();
-            for _ in 0..v.len().checked_sub(1).unwrap() {
+            for _ in 0..v.len().strict_sub(1) {
                 x(f, &mut v);
             }
             s.push(v.pop().unwrap());
