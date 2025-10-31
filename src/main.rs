@@ -16,6 +16,7 @@ enum Op {
     Gt,
     Select,
     Keep,
+    Join,
     Length,
     Iota,
     Reverse,
@@ -57,6 +58,11 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             assert_eq!(a.len(), b.len());
             let f = |(a, b)| std::iter::repeat_n(b, usize::try_from(a).unwrap());
             s.push(c(a, b).flat_map(f).collect());
+        }
+        Op::Join => {
+            let [mut a, b] = g(s);
+            a.extend(b);
+            s.push(a);
         }
         Op::Length => {
             let [a] = g(s);
@@ -165,7 +171,8 @@ fn s1(op: &Op) -> [usize; 2] {
         | Op::Ge
         | Op::Gt
         | Op::Select
-        | Op::Keep => [2, 1],
+        | Op::Keep
+        | Op::Join => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
             assert!(s_(v) == [2, 1]);
             [1, 1]
