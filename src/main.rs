@@ -9,7 +9,11 @@ enum Op {
     Mul,
     Min,
     Max,
-    Compare(Comparison),
+    Lt,
+    Le,
+    Eq,
+    Ge,
+    Gt,
     Select,
     Keep,
     Length,
@@ -23,14 +27,6 @@ enum Op {
     Pop,
     Fork(Vec<Vec<Op>>),
     Bracket(Vec<Vec<Op>>),
-}
-
-enum Comparison {
-    Lt,
-    Le,
-    Eq,
-    Ge,
-    Gt,
 }
 
 fn x(ops: &[Op], s: &mut Vec<Vec<i32>>) {
@@ -47,13 +43,11 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Mul => p2(s, std::ops::Mul::mul),
         Op::Min => p2(s, Ord::min),
         Op::Max => p2(s, Ord::max),
-        Op::Compare(c) => match c {
-            Comparison::Lt => p2(s, |a, b| (b < a).into()),
-            Comparison::Le => p2(s, |a, b| (b <= a).into()),
-            Comparison::Eq => p2(s, |a, b| (b == a).into()),
-            Comparison::Ge => p2(s, |a, b| (b >= a).into()),
-            Comparison::Gt => p2(s, |a, b| (b > a).into()),
-        },
+        Op::Lt => p2(s, |a, b| (b < a).into()),
+        Op::Le => p2(s, |a, b| (b <= a).into()),
+        Op::Eq => p2(s, |a, b| (b == a).into()),
+        Op::Ge => p2(s, |a, b| (b >= a).into()),
+        Op::Gt => p2(s, |a, b| (b > a).into()),
         Op::Select => {
             let [a, b] = g(s);
             s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect());
@@ -165,7 +159,11 @@ fn s1(op: &Op) -> [usize; 2] {
         | Op::Mul
         | Op::Min
         | Op::Max
-        | Op::Compare(_)
+        | Op::Lt
+        | Op::Le
+        | Op::Eq
+        | Op::Ge
+        | Op::Gt
         | Op::Select
         | Op::Keep => [2, 1],
         Op::Fold(v) | Op::Scan(v) => {
