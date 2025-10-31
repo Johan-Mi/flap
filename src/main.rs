@@ -11,6 +11,7 @@ enum Op {
     Max,
     Select,
     Keep,
+    Length,
     Iota,
     Reverse,
     Rise,
@@ -46,6 +47,10 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             assert_eq!(a.len(), b.len());
             let f = |(a, b)| std::iter::repeat_n(b, usize::try_from(a).unwrap());
             s.push(c(a, b).flat_map(f).collect());
+        }
+        Op::Length => {
+            let [a] = g(s);
+            s.push(Vec::from([a.len().try_into().unwrap()]));
         }
         Op::Iota => {
             let [i] = g(s);
@@ -144,7 +149,7 @@ fn s1(op: &Op) -> [usize; 2] {
             assert!(s_(v) == [2, 1]);
             [1, 1]
         }
-        Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => [1, 1],
+        Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => [1, 1],
         Op::Pop => [1, 0],
         Op::Fork(vs) => vs
             .iter()
