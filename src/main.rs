@@ -12,8 +12,6 @@ enum Op {
     Lt,
     Le,
     Eq,
-    Ge,
-    Gt,
     Select,
     Keep,
     Join,
@@ -47,8 +45,6 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Lt => p2(s, |a, b| (b < a).into()),
         Op::Le => p2(s, |a, b| (b <= a).into()),
         Op::Eq => p2(s, |a, b| (b == a).into()),
-        Op::Ge => p2(s, |a, b| (b >= a).into()),
-        Op::Gt => p2(s, |a, b| (b > a).into()),
         Op::Select => {
             let [a, b] = g(s);
             s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect());
@@ -168,8 +164,6 @@ fn s1(op: &Op) -> [usize; 2] {
         | Op::Lt
         | Op::Le
         | Op::Eq
-        | Op::Ge
-        | Op::Gt
         | Op::Select
         | Op::Keep
         | Op::Join => [2, 1],
