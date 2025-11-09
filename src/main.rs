@@ -3,28 +3,51 @@ fn main() {
 }
 
 enum Op {
+    /// `1_2_3`
     Push(Vec<i32>),
+    /// `+`
     Add,
+    /// `-`
     Sub,
+    /// `×`
     Mul,
+    /// `↧`
     Min,
+    /// `↥`
     Max,
+    /// `<`
     Lt,
+    /// `≤`
     Le,
+    /// `=`
     Eq,
+    /// `@`
     Select,
+    /// `▽`
     Keep,
+    /// `,`
     Join,
+    /// `⧻`
     Length,
+    /// `⍳`
     Iota,
+    /// `⇌`
     Reverse,
+    /// `⍏`
     Rise,
+    /// `⍖`
     Fall,
+    /// `/f`
     Fold(Vec<Op>),
+    /// `\f`
     Scan(Vec<Op>),
+    /// `·`
     Id,
+    /// `○`
     Pop,
+    /// `{f|g|h}`
     Fork(Vec<Vec<Op>>),
+    /// `[f|g|h]`
     Bracket(Vec<Vec<Op>>),
 }
 
