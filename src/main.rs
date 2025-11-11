@@ -71,25 +71,21 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Lt => p2(s, |a, b| (b < a).into()),
         Op::Le => p2(s, |a, b| (b <= a).into()),
         Op::Eq => p2(s, |a, b| (b == a).into()),
-        Op::Select => {
-            let [a, b] = g(s);
-            s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect());
-        }
+        Op::Select => match g(s) {
+            [a, b] => s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect()),
+        },
         Op::Keep => {
             let [a, b] = g(s);
             assert_eq!(a.len(), b.len());
             let f = |(a, b)| std::iter::repeat_n(b, usize::try_from(a).unwrap());
             s.push(c(a, b).flat_map(f).collect());
         }
-        Op::Join => {
-            let [mut a, b] = g(s);
-            a.extend(b);
-            s.push(a);
-        }
-        Op::Length => {
-            let [a] = g(s);
-            s.push(Vec::from([a.len().try_into().unwrap()]));
-        }
+        Op::Join => match g(s) {
+            [mut a, b] => (a.extend(b), s.push(a)).1,
+        },
+        Op::Length => match g(s) {
+            [a] => s.push(Vec::from([a.len().try_into().unwrap()])),
+        },
         Op::Iota => {
             let [i] = g(s);
             let [i] = i.try_into().unwrap();
