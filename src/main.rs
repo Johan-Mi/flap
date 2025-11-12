@@ -106,10 +106,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         }
         Op::Fold(f) => {
             let [v] = g(s);
-            let mut v: Vec<Vec<i32>> = v
-                .into_iter()
-                .map(|it| Vec::from([it]) as Vec<i32>)
-                .collect();
+            let mut v: Vec<Vec<i32>> = v.into_iter().map(|it| [it].into()).collect();
             for _ in 0..v.len().strict_sub(1) {
                 x(f, &mut v);
             }
