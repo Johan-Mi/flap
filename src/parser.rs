@@ -26,7 +26,10 @@ fn op() -> Vec<crate::Op> {
         "⍖" => [crate::Op::Fall].into(),
         "·" => [crate::Op::Id].into(),
         "○" => [crate::Op::Pop].into(),
-        _ => todo!(),
+        s => [crate::Op::Push(
+            s.split('_').map(|it| it.parse().unwrap()).collect(),
+        )]
+        .into(),
     }
 }
 
