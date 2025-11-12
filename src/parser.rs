@@ -8,6 +8,8 @@ fn op() -> Vec<crate::Op> {
         "(" => paren(),
         "{" => [fork()].into(),
         "[" => [bracket()].into(),
+        "/" => [crate::Op::Fold(op())].into(),
+        "\\" => [crate::Op::Scan(op())].into(),
         "+" => [crate::Op::Add].into(),
         "-" => [crate::Op::Sub].into(),
         "×" => [crate::Op::Mul].into(),
