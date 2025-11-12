@@ -1,31 +1,37 @@
 fn block() -> Vec<crate::Op> {
-    std::iter::from_fn(|| (!matches!(peek(), "|" | "}" | "]")).then(op)).collect()
+    let ops = std::iter::from_fn(|| (!matches!(peek(), "|" | ")" | "}" | "]")).then(op));
+    ops.flatten().collect()
 }
 
-fn op() -> crate::Op {
+fn op() -> Vec<crate::Op> {
     match (peek(), bump()).0 {
-        "{" => fork(),
-        "[" => bracket(),
-        "+" => crate::Op::Add,
-        "-" => crate::Op::Sub,
-        "×" => crate::Op::Mul,
-        "↧" => crate::Op::Min,
-        "↥" => crate::Op::Max,
-        "<" => crate::Op::Lt,
-        "≤" => crate::Op::Le,
-        "=" => crate::Op::Eq,
-        "@" => crate::Op::Select,
-        "▽" => crate::Op::Keep,
-        "," => crate::Op::Join,
-        "⧻" => crate::Op::Length,
-        "⍳" => crate::Op::Iota,
-        "⇌" => crate::Op::Reverse,
-        "⍏" => crate::Op::Rise,
-        "⍖" => crate::Op::Fall,
-        "·" => crate::Op::Id,
-        "○" => crate::Op::Pop,
+        "(" => paren(),
+        "{" => [fork()].into(),
+        "[" => [bracket()].into(),
+        "+" => [crate::Op::Add].into(),
+        "-" => [crate::Op::Sub].into(),
+        "×" => [crate::Op::Mul].into(),
+        "↧" => [crate::Op::Min].into(),
+        "↥" => [crate::Op::Max].into(),
+        "<" => [crate::Op::Lt].into(),
+        "≤" => [crate::Op::Le].into(),
+        "=" => [crate::Op::Eq].into(),
+        "@" => [crate::Op::Select].into(),
+        "▽" => [crate::Op::Keep].into(),
+        "," => [crate::Op::Join].into(),
+        "⧻" => [crate::Op::Length].into(),
+        "⍳" => [crate::Op::Iota].into(),
+        "⇌" => [crate::Op::Reverse].into(),
+        "⍏" => [crate::Op::Rise].into(),
+        "⍖" => [crate::Op::Fall].into(),
+        "·" => [crate::Op::Id].into(),
+        "○" => [crate::Op::Pop].into(),
         _ => todo!(),
     }
+}
+
+fn paren() -> Vec<crate::Op> {
+    (block(), assert!(peek() == ")"), bump()).0
 }
 
 fn fork() -> crate::Op {
