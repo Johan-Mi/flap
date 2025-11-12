@@ -189,7 +189,7 @@ fn s1(op: &Op) -> [usize; 2] {
         | Op::Select
         | Op::Keep
         | Op::Join => [2, 1],
-        Op::Fold(v) | Op::Scan(v) => (assert!(s_(v) == [2, 1]), [1, 1]).1,
+        Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(v), [2, 1]), [1, 1]).1,
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => [1, 1],
         Op::Pop => [1, 0],
         Op::Fork(vs) => vs

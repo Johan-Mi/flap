@@ -36,7 +36,7 @@ fn op() -> Vec<crate::Op> {
 }
 
 fn paren() -> Vec<crate::Op> {
-    (block(), assert!(peek() == ")"), bump()).0
+    (block(), assert_eq!(peek(), ")"), bump()).0
 }
 
 fn fork() -> crate::Op {
