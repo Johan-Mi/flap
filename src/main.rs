@@ -2,7 +2,14 @@ mod lexer;
 mod parser;
 
 fn main() {
-    todo!();
+    let mut source_code = String::new();
+    let _: usize = std::io::Read::read_to_string(&mut std::io::stdin(), &mut source_code).unwrap();
+    let p = parser::block(&mut Iterator::peekable(&mut lexer::lex(&source_code)));
+    let mut s = Vec::new();
+    x(&p, &mut s);
+    for s in s {
+        println!("{s:?}");
+    }
 }
 
 enum Op {
