@@ -1,15 +1,18 @@
-fn block() -> Vec<crate::Op> {
-    let ops = std::iter::from_fn(|| (!matches!(peek(), "|" | ")" | "}" | "]")).then(op));
-    ops.flatten().collect()
+type Parser<'a, 'src> = std::iter::Peekable<&'a mut dyn Iterator<Item = &'src str>>;
+
+pub fn block(p: &mut Parser) -> Vec<crate::Op> {
+    std::iter::from_fn(|| (!matches!(peek(p), "" | "|" | ")" | "}" | "]")).then(|| op(p)))
+        .flatten()
+        .collect()
 }
 
-fn op() -> Vec<crate::Op> {
-    match (peek(), bump()).0 {
-        "(" => paren(),
-        "{" => [fork()].into(),
-        "[" => [bracket()].into(),
-        "/" => [crate::Op::Fold(op())].into(),
-        "\\" => [crate::Op::Scan(op())].into(),
+fn op(p: &mut Parser) -> Vec<crate::Op> {
+    match (peek(p), bump(p)).0 {
+        "(" => paren(p),
+        "{" => [fork(p)].into(),
+        "[" => [bracket(p)].into(),
+        "/" => [crate::Op::Fold(op(p))].into(),
+        "\\" => [crate::Op::Scan(op(p))].into(),
         "+" => [crate::Op::Add].into(),
         "-" => [crate::Op::Sub].into(),
         "×" => [crate::Op::Mul].into(),
@@ -35,30 +38,30 @@ fn op() -> Vec<crate::Op> {
     }
 }
 
-fn paren() -> Vec<crate::Op> {
-    (block(), assert_eq!(peek(), ")"), bump()).0
+fn paren(p: &mut Parser) -> Vec<crate::Op> {
+    (block(p), assert_eq!(peek(p), ")"), bump(p)).0
 }
 
-fn fork() -> crate::Op {
+fn fork(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
-        (peek() != "}").then(|| (block(), assert!(matches!(peek(), "|" | "}")), bump()).0)
+        (peek(p) != "}").then(|| (block(p), assert!(matches!(peek(p), "|" | "}")), bump(p)).0)
     })
     .collect();
     crate::Op::Fork(bs)
 }
 
-fn bracket() -> crate::Op {
+fn bracket(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
-        (peek() != "]").then(|| (block(), assert!(matches!(peek(), "|" | "]")), bump()).0)
+        (peek(p) != "]").then(|| (block(p), assert!(matches!(peek(p), "|" | "]")), bump(p)).0)
     })
     .collect();
     crate::Op::Bracket(bs)
 }
 
-fn peek<'src>() -> &'src str {
-    todo!()
+fn peek<'src>(p: &mut Parser<'_, 'src>) -> &'src str {
+    p.peek().copied().unwrap_or_default()
 }
 
-fn bump() {
-    todo!()
+fn bump(p: &mut Parser) {
+    let _: Option<&str> = p.next();
 }
