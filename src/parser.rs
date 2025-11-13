@@ -40,15 +40,13 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
 fn fork(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
         (p.peek() != Some(&"}")).then(|| (block(p), assert!(matches!(p.next(), Some("|" | "}")))).0)
-    })
-    .collect();
-    crate::Op::Fork(bs)
+    });
+    crate::Op::Fork(bs.collect())
 }
 
 fn bracket(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
         (p.peek() != Some(&"]")).then(|| (block(p), assert!(matches!(p.next(), Some("|" | "]")))).0)
-    })
-    .collect();
-    crate::Op::Bracket(bs)
+    });
+    crate::Op::Bracket(bs.collect())
 }
