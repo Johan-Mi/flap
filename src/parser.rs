@@ -6,7 +6,7 @@ pub fn block(p: &mut Parser) -> Vec<crate::Op> {
 }
 
 fn op(p: &mut Parser) -> Vec<crate::Op> {
-    match (peek(p), bump(p)).0 {
+    match p.next().unwrap() {
         "(" => paren(p),
         "{" => [fork(p)].into(),
         "[" => [bracket(p)].into(),
@@ -38,12 +38,12 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
 }
 
 fn paren(p: &mut Parser) -> Vec<crate::Op> {
-    (block(p), assert_eq!(peek(p), ")"), bump(p)).0
+    (block(p), assert_eq!(p.next(), Some(")"))).0
 }
 
 fn fork(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
-        (peek(p) != "}").then(|| (block(p), assert!(matches!(peek(p), "|" | "}")), bump(p)).0)
+        (peek(p) != "}").then(|| (block(p), assert!(matches!(p.next(), Some("|" | "}")))).0)
     })
     .collect();
     crate::Op::Fork(bs)
@@ -51,7 +51,7 @@ fn fork(p: &mut Parser) -> crate::Op {
 
 fn bracket(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
-        (peek(p) != "]").then(|| (block(p), assert!(matches!(peek(p), "|" | "]")), bump(p)).0)
+        (peek(p) != "]").then(|| (block(p), assert!(matches!(p.next(), Some("|" | "]")))).0)
     })
     .collect();
     crate::Op::Bracket(bs)
@@ -59,8 +59,4 @@ fn bracket(p: &mut Parser) -> crate::Op {
 
 fn peek<'src>(p: &mut Parser<'_, 'src>) -> &'src str {
     p.peek().copied().unwrap_or_default()
-}
-
-fn bump(p: &mut Parser) {
-    let _: Option<&str> = p.next();
 }
