@@ -10,17 +10,15 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
         "(" => (block(p), assert_eq!(p.next(), Some(")"))).0,
         "{" => {
             let bs = std::iter::from_fn(|| {
-                (p.peek() != Some(&"}"))
-                    .then(|| block(p))
-                    .inspect(|_| assert!(p.peek() == Some(&"}") || p.next() == Some("|")))
+                let b = (p.peek() != Some(&"}")).then(|| block(p));
+                b.inspect(|_| assert!(p.peek() == Some(&"}") || p.next() == Some("|")))
             });
             [crate::Op::Fork(bs.collect())].into()
         }
         "[" => {
             let bs = std::iter::from_fn(|| {
-                (p.peek() != Some(&"]"))
-                    .then(|| block(p))
-                    .inspect(|_| assert!(p.peek() == Some(&"]") || p.next() == Some("|")))
+                let b = (p.peek() != Some(&"]")).then(|| block(p));
+                b.inspect(|_| assert!(p.peek() == Some(&"]") || p.next() == Some("|")))
             });
             [crate::Op::Bracket(bs.collect())].into()
         }
