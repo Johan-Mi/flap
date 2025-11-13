@@ -6,22 +6,18 @@ pub fn block(p: &mut Parser) -> Vec<crate::Op> {
 }
 
 fn op(p: &mut Parser) -> Vec<crate::Op> {
+    let variadic_modifier = |p: &mut Parser, op: fn(_) -> _, end| {
+        let bs = std::iter::from_fn(|| {
+            let b = (p.peek() != Some(&end)).then(|| block(p));
+            b.inspect(|_| assert!(p.peek() == Some(&end) || p.next() == Some("|")))
+        });
+        [op(bs.collect())].into()
+    };
+
     match p.next().unwrap() {
         "(" => (block(p), assert_eq!(p.next(), Some(")"))).0,
-        "{" => {
-            let bs = std::iter::from_fn(|| {
-                let b = (p.peek() != Some(&"}")).then(|| block(p));
-                b.inspect(|_| assert!(p.peek() == Some(&"}") || p.next() == Some("|")))
-            });
-            [crate::Op::Fork(bs.collect())].into()
-        }
-        "[" => {
-            let bs = std::iter::from_fn(|| {
-                let b = (p.peek() != Some(&"]")).then(|| block(p));
-                b.inspect(|_| assert!(p.peek() == Some(&"]") || p.next() == Some("|")))
-            });
-            [crate::Op::Bracket(bs.collect())].into()
-        }
+        "{" => variadic_modifier(p, crate::Op::Fork, "}"),
+        "[" => variadic_modifier(p, crate::Op::Bracket, "]"),
         "/" => [crate::Op::Fold(op(p))].into(),
         "\\" => [crate::Op::Scan(op(p))].into(),
         "+" => [crate::Op::Add].into(),
