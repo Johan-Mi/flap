@@ -7,7 +7,7 @@ pub fn block(p: &mut Parser) -> Vec<crate::Op> {
 
 fn op(p: &mut Parser) -> Vec<crate::Op> {
     match p.next().unwrap() {
-        "(" => paren(p),
+        "(" => (block(p), assert_eq!(p.next(), Some(")"))).0,
         "{" => [fork(p)].into(),
         "[" => [bracket(p)].into(),
         "/" => [crate::Op::Fold(op(p))].into(),
@@ -35,10 +35,6 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
         )]
         .into(),
     }
-}
-
-fn paren(p: &mut Parser) -> Vec<crate::Op> {
-    (block(p), assert_eq!(p.next(), Some(")"))).0
 }
 
 fn fork(p: &mut Parser) -> crate::Op {
