@@ -1,9 +1,8 @@
 type Parser<'a, 'src> = std::iter::Peekable<&'a mut dyn Iterator<Item = &'src str>>;
 
 pub fn block(p: &mut Parser) -> Vec<crate::Op> {
-    std::iter::from_fn(|| (!matches!(peek(p), "" | "|" | ")" | "}" | "]")).then(|| op(p)))
-        .flatten()
-        .collect()
+    let it = std::iter::from_fn(|| (!matches!(peek(p), "" | "|" | ")" | "}" | "]")).then(|| op(p)));
+    it.flatten().collect()
 }
 
 fn op(p: &mut Parser) -> Vec<crate::Op> {
