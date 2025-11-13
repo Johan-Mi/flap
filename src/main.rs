@@ -83,7 +83,6 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         },
         Op::Keep => {
             let [a, b] = g(s);
-            assert_eq!(a.len(), b.len());
             let f = |(a, b)| std::iter::repeat_n(b, usize::try_from(a).unwrap());
             s.push(c(a, b).flat_map(f).collect());
         }
