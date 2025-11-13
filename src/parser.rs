@@ -1,8 +1,8 @@
 type Parser<'a, 'src> = std::iter::Peekable<&'a mut dyn Iterator<Item = &'src str>>;
 
 pub fn block(p: &mut Parser) -> Vec<crate::Op> {
-    let it = std::iter::from_fn(|| (!matches!(peek(p), "" | "|" | ")" | "}" | "]")).then(|| op(p)));
-    it.flatten().collect()
+    let f = || (!matches!(p.peek().copied(), None | Some("|" | ")" | "}" | "]"))).then(|| op(p));
+    std::iter::from_fn(f).flatten().collect()
 }
 
 fn op(p: &mut Parser) -> Vec<crate::Op> {
@@ -39,7 +39,7 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
 
 fn fork(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
-        (peek(p) != "}").then(|| (block(p), assert!(matches!(p.next(), Some("|" | "}")))).0)
+        (p.peek() != Some(&"}")).then(|| (block(p), assert!(matches!(p.next(), Some("|" | "}")))).0)
     })
     .collect();
     crate::Op::Fork(bs)
@@ -47,12 +47,8 @@ fn fork(p: &mut Parser) -> crate::Op {
 
 fn bracket(p: &mut Parser) -> crate::Op {
     let bs = std::iter::from_fn(|| {
-        (peek(p) != "]").then(|| (block(p), assert!(matches!(p.next(), Some("|" | "]")))).0)
+        (p.peek() != Some(&"]")).then(|| (block(p), assert!(matches!(p.next(), Some("|" | "]")))).0)
     })
     .collect();
     crate::Op::Bracket(bs)
-}
-
-fn peek<'src>(p: &mut Parser<'_, 'src>) -> &'src str {
-    p.peek().copied().unwrap_or_default()
 }
