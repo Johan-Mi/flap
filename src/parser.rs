@@ -11,36 +11,33 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
             let b = (p.peek() != Some(&end)).then(|| block(p));
             b.inspect(|_| assert!(p.peek() == Some(&end) || p.next() == Some("|")))
         });
-        [op(bs.collect())].into()
+        op(bs.collect())
     };
 
-    match p.next().unwrap() {
-        "(" => (block(p), assert_eq!(p.next(), Some(")"))).0,
+    Vec::from([match p.next().unwrap() {
+        "(" => return (block(p), assert_eq!(p.next(), Some(")"))).0,
         "{" => variadic_modifier(p, crate::Op::Fork, "}"),
         "[" => variadic_modifier(p, crate::Op::Bracket, "]"),
-        "/" => [crate::Op::Fold(op(p))].into(),
-        "\\" => [crate::Op::Scan(op(p))].into(),
-        "+" => [crate::Op::Add].into(),
-        "-" => [crate::Op::Sub].into(),
-        "×" => [crate::Op::Mul].into(),
-        "↧" => [crate::Op::Min].into(),
-        "↥" => [crate::Op::Max].into(),
-        "<" => [crate::Op::Lt].into(),
-        "≤" => [crate::Op::Le].into(),
-        "=" => [crate::Op::Eq].into(),
-        "@" => [crate::Op::Select].into(),
-        "▽" => [crate::Op::Keep].into(),
-        "," => [crate::Op::Join].into(),
-        "⧻" => [crate::Op::Length].into(),
-        "⍳" => [crate::Op::Iota].into(),
-        "⇌" => [crate::Op::Reverse].into(),
-        "⍏" => [crate::Op::Rise].into(),
-        "⍖" => [crate::Op::Fall].into(),
-        "·" => [crate::Op::Id].into(),
-        "○" => [crate::Op::Pop].into(),
-        s => [crate::Op::Push(
-            s.split('_').map(|it| it.parse().unwrap()).collect(),
-        )]
-        .into(),
-    }
+        "/" => crate::Op::Fold(op(p)),
+        "\\" => crate::Op::Scan(op(p)),
+        "+" => crate::Op::Add,
+        "-" => crate::Op::Sub,
+        "×" => crate::Op::Mul,
+        "↧" => crate::Op::Min,
+        "↥" => crate::Op::Max,
+        "<" => crate::Op::Lt,
+        "≤" => crate::Op::Le,
+        "=" => crate::Op::Eq,
+        "@" => crate::Op::Select,
+        "▽" => crate::Op::Keep,
+        "," => crate::Op::Join,
+        "⧻" => crate::Op::Length,
+        "⍳" => crate::Op::Iota,
+        "⇌" => crate::Op::Reverse,
+        "⍏" => crate::Op::Rise,
+        "⍖" => crate::Op::Fall,
+        "·" => crate::Op::Id,
+        "○" => crate::Op::Pop,
+        s => crate::Op::Push(s.split('_').map(|it| it.parse().unwrap()).collect()),
+    }])
 }
