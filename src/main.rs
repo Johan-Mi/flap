@@ -139,17 +139,17 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Fork(f) => {
             let mut v = Vec::new();
             for f in f {
-                let [i, _] = s_(f);
+                let (i, _) = s_(f);
                 v.extend(s[s.len() - i..].iter().cloned());
                 x(f, &mut v);
             }
-            s.truncate(s.len() - s1(op)[0]);
+            s.truncate(s.len() - s1(op).0);
             s.extend(v);
         }
         Op::Bracket(f) => {
             let mut v = Vec::new();
             for f in f {
-                let [_, o] = s_(f);
+                let (_, o) = s_(f);
                 x(f, s);
                 v.extend(s.drain(s.len() - o..));
             }
@@ -172,15 +172,15 @@ fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
     a.into_iter().cycle().zip(b.into_iter().cycle()).take(len)
 }
 
-fn s_(ops: &[Op]) -> [usize; 2] {
-    ops.iter().map(s1).fold([0, 0], |[i_, o_], [i, o]| {
-        [i_ + i.saturating_sub(o_), o + o_.saturating_sub(i)]
+fn s_(ops: &[Op]) -> (usize, usize) {
+    ops.iter().map(s1).fold((0, 0), |(i_, o_), (i, o)| {
+        (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
     })
 }
 
-fn s1(op: &Op) -> [usize; 2] {
+fn s1(op: &Op) -> (usize, usize) {
     match op {
-        Op::Push(_) => [0, 1],
+        Op::Push(_) => (0, 1),
         Op::Add
         | Op::Sub
         | Op::Mul
@@ -191,17 +191,17 @@ fn s1(op: &Op) -> [usize; 2] {
         | Op::Eq
         | Op::Select
         | Op::Keep
-        | Op::Join => [2, 1],
-        Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(v), [2, 1]), [1, 1]).1,
-        Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => [1, 1],
-        Op::Pop => [1, 0],
+        | Op::Join => (2, 1),
+        Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(v), (2, 1)), (1, 1)).1,
+        Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
+        Op::Pop => (1, 0),
         Op::Fork(vs) => vs
             .iter()
             .map(|v| s_(v))
-            .fold([0, 0], |[i1, o1], [i2, o2]| [i1.max(i2), o1 + o2]),
+            .fold((0, 0), |(i1, o1), (i2, o2)| (i1.max(i2), o1 + o2)),
         Op::Bracket(vs) => vs
             .iter()
             .map(|v| s_(v))
-            .fold([0, 0], |[i1, o1], [i2, o2]| [i1 + i2, o1 + o2]),
+            .fold((0, 0), |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2)),
     }
 }
