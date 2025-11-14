@@ -120,11 +120,10 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Scan(f) => {
             let [v] = g(s);
             let mut w = Vec::with_capacity(v.len());
-            let mut v = v.into_iter();
-            if let Some(init) = v.next() {
-                w.push(init);
-                s.push(Vec::from([init]));
-                for a in v {
+            if let [init, v @ ..] = &*v {
+                w.push(*init);
+                s.push(Vec::from([*init]));
+                for &a in v {
                     s.push(Vec::from([a]));
                     x(f, s);
                     w.extend(s.last().unwrap());
