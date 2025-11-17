@@ -75,15 +75,15 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
         Op::Mul => p2(s, std::ops::Mul::mul),
         Op::Min => p2(s, Ord::min),
         Op::Max => p2(s, Ord::max),
-        Op::Lt => p2(s, |a, b| (b < a).into()),
-        Op::Le => p2(s, |a, b| (b <= a).into()),
-        Op::Eq => p2(s, |a, b| (b == a).into()),
+        Op::Lt => p2(s, |a, b| (a < b).into()),
+        Op::Le => p2(s, |a, b| (a <= b).into()),
+        Op::Eq => p2(s, |a, b| (a == b).into()),
         Op::Select => match g(s) {
-            [a, b] => s.push(a.iter().map(|&i| b[usize::try_from(i).unwrap()]).collect()),
+            [a, b] => s.push(b.iter().map(|&i| a[usize::try_from(i).unwrap()]).collect()),
         },
         Op::Keep => {
             let [a, b] = g(s);
-            let f = |(a, b)| std::iter::repeat_n(b, usize::try_from(a).unwrap());
+            let f = |(a, b)| std::iter::repeat_n(a, usize::try_from(b).unwrap());
             s.push(c(a, b).flat_map(f).collect());
         }
         Op::Join => match g(s) {
@@ -157,7 +157,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
 }
 
 fn g<const N: usize>(s: &mut Vec<Vec<i32>>) -> [Vec<i32>; N] {
-    std::array::from_fn(|_| s.pop().unwrap())
+    s.split_off(s.len() - N).try_into().unwrap()
 }
 
 fn p2(s: &mut Vec<Vec<i32>>, f: fn(i32, i32) -> i32) {
