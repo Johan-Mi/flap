@@ -9,11 +9,14 @@ pub fn block(p: &mut Parser, program: &mut crate::P) -> Vec<crate::Op> {
 
 fn op(p: &mut Parser, program: &mut crate::P) -> Vec<crate::Op> {
     let variadic_modifier = |p: &mut Parser, program: &mut _, op: fn(_) -> _, end| {
-        let bs = std::iter::from_fn(|| {
+        let bs: Vec<_> = std::iter::from_fn(|| {
             let b = (p.peek() != Some(&end)).then(|| block(p, program));
             b.inspect(|_| assert!(p.peek() == Some(&end) || p.next() == Some("|")))
-        });
-        op(bs.collect())
+        })
+        .collect();
+        let start = program.blocks.len();
+        program.blocks.extend(bs);
+        op(start..program.blocks.len())
     };
 
     Vec::from([match p.next().unwrap() {

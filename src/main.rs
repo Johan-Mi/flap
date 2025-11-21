@@ -61,9 +61,9 @@ enum Op {
     /// `○`
     Pop,
     /// `{f|g|h}`
-    Fork(Vec<Vec<Op>>),
+    Fork(std::ops::Range<usize>),
     /// `[f|g|h]`
-    Bracket(Vec<Vec<Op>>),
+    Bracket(std::ops::Range<usize>),
 }
 
 struct P {
@@ -146,7 +146,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
         Op::Pop => _ = s.pop().unwrap(),
         Op::Fork(f) => {
             let mut v = Vec::new();
-            for f in f {
+            for f in &p.blocks[f.clone()] {
                 let (i, _) = s_(f, p);
                 v.extend(s[s.len() - i..].iter().cloned());
                 x(f, &mut v, p);
@@ -156,7 +156,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
         }
         Op::Bracket(f) => {
             let mut v = Vec::new();
-            for f in f {
+            for f in &p.blocks[f.clone()] {
                 let (_, o) = s_(f, p);
                 x(f, s, p);
                 v.extend(s.drain(s.len() - o..));
@@ -205,11 +205,11 @@ fn s1(op: &Op, p: &P) -> (usize, usize) {
         Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(&p.blocks[*v], p), (2, 1)), (1, 1)).1,
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
-        Op::Fork(vs) => vs
+        Op::Fork(vs) => p.blocks[vs.clone()]
             .iter()
             .map(|v| s_(v, p))
             .fold((0, 0), |(i1, o1), (i2, o2)| (i1.max(i2), o1 + o2)),
-        Op::Bracket(vs) => vs
+        Op::Bracket(vs) => p.blocks[vs.clone()]
             .iter()
             .map(|v| s_(v, p))
             .fold((0, 0), |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2)),
