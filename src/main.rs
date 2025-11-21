@@ -5,10 +5,13 @@ fn main() {
     let mut source_code = String::new();
     let _: usize = std::io::Read::read_to_string(&mut std::io::stdin(), &mut source_code).unwrap();
     let mut tokens = lexer::lex(&source_code);
-    let mut literals = Vec::new();
-    let p = parser::block(&mut Iterator::peekable(&mut tokens), &mut literals);
+    let mut p = P {
+        literals: Vec::new(),
+        blocks: Vec::new(),
+    };
+    let block = parser::block(&mut Iterator::peekable(&mut tokens), &mut p);
     let mut s = Vec::new();
-    x(&p, &mut s, &literals);
+    x(&block, &mut s, &p);
     for s in s {
         println!("{s:?}");
     }
@@ -50,9 +53,9 @@ enum Op {
     /// `⍖`
     Fall,
     /// `/f`
-    Fold(Vec<Op>),
+    Fold(usize),
     /// `\f`
-    Scan(Vec<Op>),
+    Scan(usize),
     /// `·`
     Id,
     /// `○`
@@ -63,15 +66,20 @@ enum Op {
     Bracket(Vec<Vec<Op>>),
 }
 
-fn x(ops: &[Op], s: &mut Vec<Vec<i32>>, literals: &[i32]) {
+struct P {
+    literals: Vec<i32>,
+    blocks: Vec<Vec<Op>>,
+}
+
+fn x(ops: &[Op], s: &mut Vec<Vec<i32>>, p: &P) {
     for op in ops {
-        x1(op, s, literals);
+        x1(op, s, p);
     }
 }
 
-fn x1(op: &Op, s: &mut Vec<Vec<i32>>, literals: &[i32]) {
+fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
     match op {
-        Op::Push(v) => s.push(literals[v.clone()].to_vec()),
+        Op::Push(v) => s.push(p.literals[v.clone()].to_vec()),
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
@@ -116,7 +124,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, literals: &[i32]) {
             let [v] = g(s);
             s.extend(v.iter().map(|&it| [it].into()));
             for _ in 0..v.len().strict_sub(1) {
-                x(f, s, literals);
+                x(&p.blocks[*f], s, p);
             }
         }
         Op::Scan(f) => {
@@ -127,7 +135,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, literals: &[i32]) {
                 s.push(Vec::from([*init]));
                 for &a in v {
                     s.push(Vec::from([a]));
-                    x(f, s, literals);
+                    x(&p.blocks[*f], s, p);
                     w.extend(s.last().unwrap());
                 }
                 let _: Vec<i32> = s.pop().unwrap();
@@ -139,18 +147,18 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, literals: &[i32]) {
         Op::Fork(f) => {
             let mut v = Vec::new();
             for f in f {
-                let (i, _) = s_(f);
+                let (i, _) = s_(f, p);
                 v.extend(s[s.len() - i..].iter().cloned());
-                x(f, &mut v, literals);
+                x(f, &mut v, p);
             }
-            s.truncate(s.len() - s1(op).0);
+            s.truncate(s.len() - s1(op, p).0);
             s.extend(v);
         }
         Op::Bracket(f) => {
             let mut v = Vec::new();
             for f in f {
-                let (_, o) = s_(f);
-                x(f, s, literals);
+                let (_, o) = s_(f, p);
+                x(f, s, p);
                 v.extend(s.drain(s.len() - o..));
             }
             s.extend(v);
@@ -172,13 +180,15 @@ fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
     a.into_iter().cycle().zip(b.into_iter().cycle()).take(len)
 }
 
-fn s_(ops: &[Op]) -> (usize, usize) {
-    ops.iter().map(s1).fold((0, 0), |(i_, o_), (i, o)| {
-        (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
-    })
+fn s_(ops: &[Op], p: &P) -> (usize, usize) {
+    ops.iter()
+        .map(|it| s1(it, p))
+        .fold((0, 0), |(i_, o_), (i, o)| {
+            (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
+        })
 }
 
-fn s1(op: &Op) -> (usize, usize) {
+fn s1(op: &Op, p: &P) -> (usize, usize) {
     match op {
         Op::Push(_) => (0, 1),
         Op::Add
@@ -192,16 +202,16 @@ fn s1(op: &Op) -> (usize, usize) {
         | Op::Select
         | Op::Keep
         | Op::Join => (2, 1),
-        Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(v), (2, 1)), (1, 1)).1,
+        Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(&p.blocks[*v], p), (2, 1)), (1, 1)).1,
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
         Op::Fork(vs) => vs
             .iter()
-            .map(|v| s_(v))
+            .map(|v| s_(v, p))
             .fold((0, 0), |(i1, o1), (i2, o2)| (i1.max(i2), o1 + o2)),
         Op::Bracket(vs) => vs
             .iter()
-            .map(|v| s_(v))
+            .map(|v| s_(v, p))
             .fold((0, 0), |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2)),
     }
 }
