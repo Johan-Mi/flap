@@ -1,25 +1,27 @@
 type Parser<'a, 'src> = std::iter::Peekable<&'a mut dyn Iterator<Item = &'src str>>;
 
-pub fn block(p: &mut Parser) -> Vec<crate::Op> {
-    let f = || (!matches!(p.peek().copied(), None | Some("|" | ")" | "}" | "]"))).then(|| op(p));
+pub fn block(p: &mut Parser, literals: &mut Vec<i32>) -> Vec<crate::Op> {
+    let f = || {
+        (!matches!(p.peek().copied(), None | Some("|" | ")" | "}" | "]"))).then(|| op(p, literals))
+    };
     std::iter::from_fn(f).flatten().collect()
 }
 
-fn op(p: &mut Parser) -> Vec<crate::Op> {
-    let variadic_modifier = |p: &mut Parser, op: fn(_) -> _, end| {
+fn op(p: &mut Parser, literals: &mut Vec<i32>) -> Vec<crate::Op> {
+    let variadic_modifier = |p: &mut Parser, literals: &mut _, op: fn(_) -> _, end| {
         let bs = std::iter::from_fn(|| {
-            let b = (p.peek() != Some(&end)).then(|| block(p));
+            let b = (p.peek() != Some(&end)).then(|| block(p, literals));
             b.inspect(|_| assert!(p.peek() == Some(&end) || p.next() == Some("|")))
         });
         op(bs.collect())
     };
 
     Vec::from([match p.next().unwrap() {
-        "(" => return (block(p), assert_eq!(p.next(), Some(")"))).0,
-        "{" => variadic_modifier(p, crate::Op::Fork, "}"),
-        "[" => variadic_modifier(p, crate::Op::Bracket, "]"),
-        "/" => crate::Op::Fold(op(p)),
-        "\\" => crate::Op::Scan(op(p)),
+        "(" => return (block(p, literals), assert_eq!(p.next(), Some(")"))).0,
+        "{" => variadic_modifier(p, literals, crate::Op::Fork, "}"),
+        "[" => variadic_modifier(p, literals, crate::Op::Bracket, "]"),
+        "/" => crate::Op::Fold(op(p, literals)),
+        "\\" => crate::Op::Scan(op(p, literals)),
         "+" => crate::Op::Add,
         "-" => crate::Op::Sub,
         "×" => crate::Op::Mul,
@@ -38,6 +40,10 @@ fn op(p: &mut Parser) -> Vec<crate::Op> {
         "⍖" => crate::Op::Fall,
         "·" => crate::Op::Id,
         "○" => crate::Op::Pop,
-        s => crate::Op::Push(s.split('_').map(|it| it.parse().unwrap()).collect()),
+        s => {
+            let start = literals.len();
+            literals.extend(s.split('_').map(|it| it.parse::<i32>().unwrap()));
+            crate::Op::Push(start..literals.len())
+        }
     }])
 }

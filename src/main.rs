@@ -4,9 +4,11 @@ mod parser;
 fn main() {
     let mut source_code = String::new();
     let _: usize = std::io::Read::read_to_string(&mut std::io::stdin(), &mut source_code).unwrap();
-    let p = parser::block(&mut Iterator::peekable(&mut lexer::lex(&source_code)));
+    let mut tokens = lexer::lex(&source_code);
+    let mut literals = Vec::new();
+    let p = parser::block(&mut Iterator::peekable(&mut tokens), &mut literals);
     let mut s = Vec::new();
-    x(&p, &mut s);
+    x(&p, &mut s, &literals);
     for s in s {
         println!("{s:?}");
     }
@@ -14,7 +16,7 @@ fn main() {
 
 enum Op {
     /// `1_2_3`
-    Push(Vec<i32>),
+    Push(std::ops::Range<usize>),
     /// `+`
     Add,
     /// `-`
@@ -61,15 +63,15 @@ enum Op {
     Bracket(Vec<Vec<Op>>),
 }
 
-fn x(ops: &[Op], s: &mut Vec<Vec<i32>>) {
+fn x(ops: &[Op], s: &mut Vec<Vec<i32>>, literals: &[i32]) {
     for op in ops {
-        x1(op, s);
+        x1(op, s, literals);
     }
 }
 
-fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
+fn x1(op: &Op, s: &mut Vec<Vec<i32>>, literals: &[i32]) {
     match op {
-        Op::Push(v) => s.push(v.clone()),
+        Op::Push(v) => s.push(literals[v.clone()].to_vec()),
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
@@ -114,7 +116,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             let [v] = g(s);
             s.extend(v.iter().map(|&it| [it].into()));
             for _ in 0..v.len().strict_sub(1) {
-                x(f, s);
+                x(f, s, literals);
             }
         }
         Op::Scan(f) => {
@@ -125,7 +127,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
                 s.push(Vec::from([*init]));
                 for &a in v {
                     s.push(Vec::from([a]));
-                    x(f, s);
+                    x(f, s, literals);
                     w.extend(s.last().unwrap());
                 }
                 let _: Vec<i32> = s.pop().unwrap();
@@ -139,7 +141,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             for f in f {
                 let (i, _) = s_(f);
                 v.extend(s[s.len() - i..].iter().cloned());
-                x(f, &mut v);
+                x(f, &mut v, literals);
             }
             s.truncate(s.len() - s1(op).0);
             s.extend(v);
@@ -148,7 +150,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>) {
             let mut v = Vec::new();
             for f in f {
                 let (_, o) = s_(f);
-                x(f, s);
+                x(f, s, literals);
                 v.extend(s.drain(s.len() - o..));
             }
             s.extend(v);
