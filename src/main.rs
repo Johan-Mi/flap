@@ -1,25 +1,24 @@
+mod ast;
 mod lexer;
 mod parser;
 
 fn main() {
     let mut source_code = String::new();
     let _: usize = std::io::Read::read_to_string(&mut std::io::stdin(), &mut source_code).unwrap();
-    let mut tokens = lexer::lex(&source_code);
-    let mut p = P {
-        literals: Vec::new(),
-        blocks: Vec::new(),
-    };
-    let block = parser::block(&mut Iterator::peekable(&mut tokens), &mut p);
+    let tree = parser::parse(lexer::lex(&source_code));
     let mut s = Vec::new();
-    x(&block, &mut s, &p);
+    x(tree.root(), &mut s);
     for s in s {
         println!("{s:?}");
     }
 }
 
+#[derive(Clone, Copy)]
 enum Op {
+    Block,
+    Number(i32),
     /// `1_2_3`
-    Push(std::ops::Range<usize>),
+    Push,
     /// `+`
     Add,
     /// `-`
@@ -53,33 +52,34 @@ enum Op {
     /// `⍖`
     Fall,
     /// `/f`
-    Fold(usize),
+    Fold,
     /// `\f`
-    Scan(usize),
+    Scan,
     /// `·`
     Id,
     /// `○`
     Pop,
     /// `{f|g|h}`
-    Fork(std::ops::Range<usize>),
+    Fork,
     /// `[f|g|h]`
-    Bracket(std::ops::Range<usize>),
+    Bracket,
 }
 
-struct P {
-    literals: Vec<i32>,
-    blocks: Vec<Vec<Op>>,
-}
-
-fn x(ops: &[Op], s: &mut Vec<Vec<i32>>, p: &P) {
-    for op in ops {
-        x1(op, s, p);
-    }
-}
-
-fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
-    match op {
-        Op::Push(v) => s.push(p.literals[v.clone()].to_vec()),
+fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
+    match node.op() {
+        Op::Block => {
+            for child in node.children() {
+                x(child, s);
+            }
+        }
+        Op::Number(_) => unreachable!(),
+        Op::Push => {
+            let ns = node.children().map(|it| match it.op() {
+                Op::Number(n) => n,
+                _ => unreachable!(),
+            });
+            s.push(ns.collect());
+        }
         Op::Add => p2(s, std::ops::Add::add),
         Op::Sub => p2(s, std::ops::Sub::sub),
         Op::Mul => p2(s, std::ops::Mul::mul),
@@ -120,14 +120,16 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
             i.sort_by_key(|&i| std::cmp::Reverse(a[usize::try_from(i).unwrap()]));
             s.push(i);
         }
-        Op::Fold(f) => {
+        Op::Fold => {
+            let f = node.children().next().unwrap();
             let [v] = g(s);
             s.extend(v.iter().map(|&it| [it].into()));
             for _ in 0..v.len().strict_sub(1) {
-                x(&p.blocks[*f], s, p);
+                x(f, s);
             }
         }
-        Op::Scan(f) => {
+        Op::Scan => {
+            let f = node.children().next().unwrap();
             let [v] = g(s);
             let mut w = Vec::with_capacity(v.len());
             if let [init, v @ ..] = &*v {
@@ -135,7 +137,7 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
                 s.push(Vec::from([*init]));
                 for &a in v {
                     s.push(Vec::from([a]));
-                    x(&p.blocks[*f], s, p);
+                    x(f, s);
                     w.extend(s.last().unwrap());
                 }
                 let _: Vec<i32> = s.pop().unwrap();
@@ -144,21 +146,21 @@ fn x1(op: &Op, s: &mut Vec<Vec<i32>>, p: &P) {
         }
         Op::Id => {}
         Op::Pop => _ = s.pop().unwrap(),
-        Op::Fork(f) => {
+        Op::Fork => {
             let mut v = Vec::new();
-            for f in &p.blocks[f.clone()] {
-                let (i, _) = s_(f, p);
+            for f in node.children() {
+                let (i, _) = s_(f);
                 v.extend(s[s.len() - i..].iter().cloned());
-                x(f, &mut v, p);
+                x(f, &mut v);
             }
-            s.truncate(s.len() - s1(op, p).0);
+            s.truncate(s.len() - s_(node).0);
             s.extend(v);
         }
-        Op::Bracket(f) => {
+        Op::Bracket => {
             let mut v = Vec::new();
-            for f in &p.blocks[f.clone()] {
-                let (_, o) = s_(f, p);
-                x(f, s, p);
+            for f in node.children() {
+                let (_, o) = s_(f);
+                x(f, s);
                 v.extend(s.drain(s.len() - o..));
             }
             s.extend(v);
@@ -180,17 +182,13 @@ fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
     a.into_iter().cycle().zip(b.into_iter().cycle()).take(len)
 }
 
-fn s_(ops: &[Op], p: &P) -> (usize, usize) {
-    ops.iter()
-        .map(|it| s1(it, p))
-        .fold((0, 0), |(i_, o_), (i, o)| {
+fn s_(node: crate::ast::Node) -> (usize, usize) {
+    match node.op() {
+        Op::Block => node.children().map(s_).fold((0, 0), |(i_, o_), (i, o)| {
             (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
-        })
-}
-
-fn s1(op: &Op, p: &P) -> (usize, usize) {
-    match op {
-        Op::Push(_) => (0, 1),
+        }),
+        Op::Number(_) => unreachable!(),
+        Op::Push => (0, 1),
         Op::Add
         | Op::Sub
         | Op::Mul
@@ -202,16 +200,19 @@ fn s1(op: &Op, p: &P) -> (usize, usize) {
         | Op::Select
         | Op::Keep
         | Op::Join => (2, 1),
-        Op::Fold(v) | Op::Scan(v) => (assert_eq!(s_(&p.blocks[*v], p), (2, 1)), (1, 1)).1,
+        Op::Fold | Op::Scan => {
+            assert_eq!(s_(node.children().next().unwrap()), (2, 1));
+            (1, 1)
+        }
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
-        Op::Fork(vs) => p.blocks[vs.clone()]
-            .iter()
-            .map(|v| s_(v, p))
+        Op::Fork => node
+            .children()
+            .map(s_)
             .fold((0, 0), |(i1, o1), (i2, o2)| (i1.max(i2), o1 + o2)),
-        Op::Bracket(vs) => p.blocks[vs.clone()]
-            .iter()
-            .map(|v| s_(v, p))
+        Op::Bracket => node
+            .children()
+            .map(s_)
             .fold((0, 0), |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2)),
     }
 }

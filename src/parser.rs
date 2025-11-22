@@ -1,63 +1,75 @@
-type Parser<'a, 'src> = std::iter::Peekable<&'a mut dyn Iterator<Item = &'src str>>;
+use crate::{Op, ast};
 
-pub fn block(p: &mut Parser, program: &mut crate::P) -> Vec<crate::Op> {
-    let f = || {
-        (!matches!(p.peek().copied(), None | Some("|" | ")" | "}" | "]"))).then(|| op(p, program))
-    };
-    std::iter::from_fn(f).flatten().collect()
-}
-
-fn op(p: &mut Parser, program: &mut crate::P) -> Vec<crate::Op> {
-    let variadic_modifier = |p: &mut Parser, program: &mut _, op: fn(_) -> _, end| {
-        let bs: Vec<_> = std::iter::from_fn(|| {
-            let b = (p.peek() != Some(&end)).then(|| block(p, program));
-            b.inspect(|_| assert!(p.peek() == Some(&end) || p.next() == Some("|")))
-        })
-        .collect();
-        let start = program.blocks.len();
-        program.blocks.extend(bs);
-        op(start..program.blocks.len())
+pub fn parse<'src>(tokens: impl Iterator<Item = &'src str>) -> ast::Tree {
+    let finish_modifier = |b: &mut ast::Builder| {
+        if matches!(b.parent(), Op::Fold | Op::Scan) {
+            b.finish_node();
+        }
     };
 
-    Vec::from([match p.next().unwrap() {
-        "(" => return (block(p, program), assert_eq!(p.next(), Some(")"))).0,
-        "{" => variadic_modifier(p, program, crate::Op::Fork, "}"),
-        "[" => variadic_modifier(p, program, crate::Op::Bracket, "]"),
-        "/" => {
-            let i = program.blocks.len();
-            let block = op(p, program);
-            program.blocks.push(block);
-            crate::Op::Fold(i)
+    let primitive = |b: &mut ast::Builder, op| {
+        b.start_node(op);
+        b.finish_node();
+        finish_modifier(b);
+    };
+
+    let mut b = ast::Builder::default();
+    b.start_node(Op::Block);
+    for token in tokens {
+        match token {
+            "(" => b.start_node(Op::Block),
+            "{" => {
+                b.start_node(Op::Fork);
+                b.start_node(Op::Block);
+            }
+            "[" => {
+                b.start_node(Op::Bracket);
+                b.start_node(Op::Block);
+            }
+            ")" => {
+                b.finish_node();
+                finish_modifier(&mut b);
+            }
+            "}" | "]" => {
+                b.finish_node();
+                b.finish_node();
+                finish_modifier(&mut b);
+            }
+            "|" => {
+                b.finish_node();
+                b.start_node(Op::Block);
+            }
+            "/" => b.start_node(Op::Fold),
+            "\\" => b.start_node(Op::Scan),
+            "+" => primitive(&mut b, Op::Add),
+            "-" => primitive(&mut b, Op::Sub),
+            "×" => primitive(&mut b, Op::Mul),
+            "↧" => primitive(&mut b, Op::Min),
+            "↥" => primitive(&mut b, Op::Max),
+            "<" => primitive(&mut b, Op::Lt),
+            "≤" => primitive(&mut b, Op::Le),
+            "=" => primitive(&mut b, Op::Eq),
+            "@" => primitive(&mut b, Op::Select),
+            "▽" => primitive(&mut b, Op::Keep),
+            "," => primitive(&mut b, Op::Join),
+            "⧻" => primitive(&mut b, Op::Length),
+            "⍳" => primitive(&mut b, Op::Iota),
+            "⇌" => primitive(&mut b, Op::Reverse),
+            "⍏" => primitive(&mut b, Op::Rise),
+            "⍖" => primitive(&mut b, Op::Fall),
+            "·" => primitive(&mut b, Op::Id),
+            "○" => primitive(&mut b, Op::Pop),
+            s => {
+                b.start_node(Op::Push);
+                for n in s.split('_') {
+                    b.start_node(Op::Number(n.parse().unwrap()));
+                    b.finish_node();
+                }
+                b.finish_node();
+                finish_modifier(&mut b);
+            }
         }
-        "\\" => {
-            let i = program.blocks.len();
-            let block = op(p, program);
-            program.blocks.push(block);
-            crate::Op::Scan(i)
-        }
-        "+" => crate::Op::Add,
-        "-" => crate::Op::Sub,
-        "×" => crate::Op::Mul,
-        "↧" => crate::Op::Min,
-        "↥" => crate::Op::Max,
-        "<" => crate::Op::Lt,
-        "≤" => crate::Op::Le,
-        "=" => crate::Op::Eq,
-        "@" => crate::Op::Select,
-        "▽" => crate::Op::Keep,
-        "," => crate::Op::Join,
-        "⧻" => crate::Op::Length,
-        "⍳" => crate::Op::Iota,
-        "⇌" => crate::Op::Reverse,
-        "⍏" => crate::Op::Rise,
-        "⍖" => crate::Op::Fall,
-        "·" => crate::Op::Id,
-        "○" => crate::Op::Pop,
-        s => {
-            let start = program.literals.len();
-            let iter = s.split('_').map(|it| it.parse::<i32>().unwrap());
-            program.literals.extend(iter);
-            crate::Op::Push(start..program.literals.len())
-        }
-    }])
+    }
+    b.finish_node();
+    b.build()
 }
