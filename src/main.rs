@@ -108,18 +108,8 @@ fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
             s.push((0..i).collect());
         }
         Op::Reverse => s.last_mut().unwrap().reverse(),
-        Op::Rise => {
-            let [a] = g(s);
-            let mut i: Vec<_> = (0..a.len().try_into().unwrap()).collect();
-            i.sort_by_key(|&i| a[usize::try_from(i).unwrap()]);
-            s.push(i);
-        }
-        Op::Fall => {
-            let [a] = g(s);
-            let mut i: Vec<_> = (0..a.len().try_into().unwrap()).collect();
-            i.sort_by_key(|&i| std::cmp::Reverse(a[usize::try_from(i).unwrap()]));
-            s.push(i);
-        }
+        Op::Rise => grade_by(s, std::convert::identity),
+        Op::Fall => grade_by(s, std::cmp::Reverse),
         Op::Fold => {
             let f = node.children().next().unwrap();
             let [v] = g(s);
@@ -166,6 +156,13 @@ fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
             s.extend(v);
         }
     }
+}
+
+fn grade_by<K: Ord>(s: &mut Vec<Vec<i32>>, f: fn(i32) -> K) {
+    let [a] = g(s);
+    let mut i: Vec<_> = (0..a.len().try_into().unwrap()).collect();
+    i.sort_by_key(|&i| f(a[usize::try_from(i).unwrap()]));
+    s.push(i);
 }
 
 fn g<const N: usize>(s: &mut Vec<Vec<i32>>) -> [Vec<i32>; N] {
