@@ -2,43 +2,22 @@ use crate::{Op, ast};
 
 pub fn parse<'src>(tokens: impl Iterator<Item = &'src str>) -> ast::Tree {
     let finish_modifier = |b: &mut ast::Builder| {
-        if matches!(b.parent(), Op::Fold | Op::Scan) {
-            b.finish_node();
-        }
+        _ = matches!(b.parent(), Op::Fold | Op::Scan) && (b.finish_node(), true).1;
     };
 
-    let primitive = |b: &mut ast::Builder, op| {
-        b.start_node(op);
-        b.finish_node();
-        finish_modifier(b);
-    };
+    let primitive =
+        |b: &mut ast::Builder, op| (b.start_node(op), b.finish_node(), finish_modifier(b)).2;
 
     let mut b = ast::Builder::default();
     b.start_node(Op::Block);
     for token in tokens {
         match token {
             "(" => b.start_node(Op::Block),
-            "{" => {
-                b.start_node(Op::Fork);
-                b.start_node(Op::Block);
-            }
-            "[" => {
-                b.start_node(Op::Bracket);
-                b.start_node(Op::Block);
-            }
-            ")" => {
-                b.finish_node();
-                finish_modifier(&mut b);
-            }
-            "}" | "]" => {
-                b.finish_node();
-                b.finish_node();
-                finish_modifier(&mut b);
-            }
-            "|" => {
-                b.finish_node();
-                b.start_node(Op::Block);
-            }
+            "{" => (b.start_node(Op::Fork), b.start_node(Op::Block)).1,
+            "[" => (b.start_node(Op::Bracket), b.start_node(Op::Block)).1,
+            ")" => (b.finish_node(), finish_modifier(&mut b)).1,
+            "}" | "]" => (b.finish_node(), b.finish_node(), finish_modifier(&mut b)).2,
+            "|" => (b.finish_node(), b.start_node(Op::Block)).1,
             "/" => b.start_node(Op::Fold),
             "\\" => b.start_node(Op::Scan),
             "+" => primitive(&mut b, Op::Add),
