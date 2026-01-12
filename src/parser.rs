@@ -2,11 +2,11 @@ use crate::{Op, ast};
 
 pub fn parse<'src>(tokens: impl Iterator<Item = &'src str>) -> ast::Tree {
     let finish_modifier = |b: &mut ast::Builder| {
+        b.finish_node();
         _ = matches!(b.parent(), Op::Fold | Op::Scan) && (b.finish_node(), true).1;
     };
 
-    let primitive =
-        |b: &mut ast::Builder, op| (b.start_node(op), b.finish_node(), finish_modifier(b)).2;
+    let primitive = |b: &mut ast::Builder, op| (b.start_node(op), finish_modifier(b)).1;
 
     let mut b = ast::Builder::default();
     b.start_node(Op::Block);
@@ -15,8 +15,8 @@ pub fn parse<'src>(tokens: impl Iterator<Item = &'src str>) -> ast::Tree {
             "(" => b.start_node(Op::Block),
             "{" => (b.start_node(Op::Fork), b.start_node(Op::Block)).1,
             "[" => (b.start_node(Op::Bracket), b.start_node(Op::Block)).1,
-            ")" => (b.finish_node(), finish_modifier(&mut b)).1,
-            "}" | "]" => (b.finish_node(), b.finish_node(), finish_modifier(&mut b)).2,
+            ")" => finish_modifier(&mut b),
+            "}" | "]" => (b.finish_node(), finish_modifier(&mut b)).1,
             "|" => (b.finish_node(), b.start_node(Op::Block)).1,
             "/" => b.start_node(Op::Fold),
             "\\" => b.start_node(Op::Scan),
@@ -44,7 +44,6 @@ pub fn parse<'src>(tokens: impl Iterator<Item = &'src str>) -> ast::Tree {
                     b.start_node(Op::Number(n.parse().unwrap()));
                     b.finish_node();
                 }
-                b.finish_node();
                 finish_modifier(&mut b);
             }
         }
