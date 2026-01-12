@@ -8,12 +8,6 @@ impl Tree {
         let tree = self;
         Node { index: 0, tree }
     }
-
-    fn children(&self, parent: usize) -> impl Iterator<Item = usize> {
-        let mut next = parent + 1;
-        let end = parent + self.sizes[parent];
-        core::iter::from_fn(move || (next != end).then(|| (next, next += self.sizes[next]).0))
-    }
 }
 
 #[derive(Clone, Copy)]
@@ -29,7 +23,10 @@ impl Node<'_> {
 
     pub fn children(self) -> impl Iterator<Item = Self> {
         let tree = self.tree;
-        tree.children(self.index).map(|index| Self { index, tree })
+        let mut next = self.index + 1;
+        let end = self.index + tree.sizes[self.index];
+        core::iter::from_fn(move || (next != end).then(|| (next, next += tree.sizes[next]).0))
+            .map(|index| Self { index, tree })
     }
 }
 
