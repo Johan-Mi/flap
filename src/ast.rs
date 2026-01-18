@@ -22,9 +22,7 @@ impl Node<'_> {
     }
 
     pub fn children(self) -> impl Iterator<Item = Self> {
-        let tree = self.tree;
-        let mut next = self.index + 1;
-        let end = tree.ends[self.index];
+        let (tree, mut next, end) = (self.tree, self.index + 1, self.tree.ends[self.index]);
         core::iter::from_fn(move || (next != end).then(|| (next, next = tree.ends[next]).0))
             .map(|index| Self { index, tree })
     }
