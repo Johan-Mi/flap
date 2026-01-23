@@ -180,6 +180,9 @@ fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
 }
 
 fn s_(node: crate::ast::Node) -> (usize, usize) {
+    let fork = |(i1, o1), (i2, o2)| (usize::max(i1, i2), o1 + o2);
+    let bracket = |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2);
+
     match node.op() {
         Op::Block => node.children().map(s_).fold((0, 0), |(i_, o_), (i, o)| {
             (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
@@ -203,13 +206,7 @@ fn s_(node: crate::ast::Node) -> (usize, usize) {
         }
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
-        Op::Fork => node
-            .children()
-            .map(s_)
-            .fold((0, 0), |(i1, o1), (i2, o2)| (i1.max(i2), o1 + o2)),
-        Op::Bracket => node
-            .children()
-            .map(s_)
-            .fold((0, 0), |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2)),
+        Op::Fork => node.children().map(s_).fold((0, 0), fork),
+        Op::Bracket => node.children().map(s_).fold((0, 0), bracket),
     }
 }
