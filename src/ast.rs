@@ -35,13 +35,9 @@ pub struct Builder {
 
 impl Default for Builder {
     fn default() -> Self {
-        Self {
-            tree: Tree {
-                ops: Vec::new(),
-                ends: Vec::new(),
-            },
-            stack: Vec::new(),
-        }
+        let (ops, ends, stack) = (Vec::new(), Vec::new(), Vec::new());
+        let tree = Tree { ops, ends };
+        Self { tree, stack }
     }
 }
 
