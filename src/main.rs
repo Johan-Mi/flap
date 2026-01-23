@@ -182,9 +182,10 @@ fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
 fn s_(node: crate::ast::Node) -> (usize, usize) {
     let fork = |(i1, o1), (i2, o2)| (usize::max(i1, i2), o1 + o2);
     let bracket = |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2);
+    let mut children = node.children();
 
     match node.op() {
-        Op::Block => node.children().map(s_).fold((0, 0), |(i_, o_), (i, o)| {
+        Op::Block => children.map(s_).fold((0, 0), |(i_, o_), (i, o)| {
             (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
         }),
         Op::Number(_) => unreachable!(),
@@ -200,13 +201,10 @@ fn s_(node: crate::ast::Node) -> (usize, usize) {
         | Op::Select
         | Op::Keep
         | Op::Join => (2, 1),
-        Op::Fold | Op::Scan => {
-            assert_eq!(s_(node.children().next().unwrap()), (2, 1));
-            (1, 1)
-        }
+        Op::Fold | Op::Scan => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (1, 1)).1,
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
-        Op::Fork => node.children().map(s_).fold((0, 0), fork),
-        Op::Bracket => node.children().map(s_).fold((0, 0), bracket),
+        Op::Fork => children.map(s_).fold((0, 0), fork),
+        Op::Bracket => children.map(s_).fold((0, 0), bracket),
     }
 }
