@@ -111,16 +111,14 @@ fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
         Op::Rise => grade_by(s, std::convert::identity),
         Op::Fall => grade_by(s, std::cmp::Reverse),
         Op::Fold => {
-            let f = node.children().next().unwrap();
-            let [v] = g(s);
+            let (f, [v]) = (node.children().next().unwrap(), g(s));
             for a in v {
                 s.push([a].into());
                 x(f, s);
             }
         }
         Op::Scan => {
-            let f = node.children().next().unwrap();
-            let [v] = g(s);
+            let (f, [v]) = (node.children().next().unwrap(), g(s));
             let mut w = Vec::with_capacity(v.len());
             if let [init, v @ ..] = &*v {
                 w.push(*init);
