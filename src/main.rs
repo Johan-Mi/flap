@@ -203,7 +203,7 @@ fn s_(node: crate::ast::Node) -> (usize, usize) {
         | Op::Join => (2, 1),
         Op::Fold => {
             let (i, o) = s_(children.next().unwrap());
-            assert_eq!(o.checked_sub(1), Some(i));
+            assert_eq!(i.checked_sub(1), Some(o));
             (i, o)
         }
         Op::Scan => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (1, 1)).1,
