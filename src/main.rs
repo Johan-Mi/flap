@@ -201,7 +201,11 @@ fn s_(node: crate::ast::Node) -> (usize, usize) {
         | Op::Select
         | Op::Keep
         | Op::Join => (2, 1),
-        Op::Fold => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (2, 1)).1,
+        Op::Fold => {
+            let (i, o) = s_(children.next().unwrap());
+            assert_eq!(o.checked_sub(1), Some(i));
+            (i, o)
+        }
         Op::Scan => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (1, 1)).1,
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
