@@ -113,8 +113,8 @@ fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
         Op::Fold => {
             let f = node.children().next().unwrap();
             let [v] = g(s);
-            s.extend(v.iter().map(|&it| [it].into()));
-            for _ in 0..v.len().strict_sub(1) {
+            for a in v {
+                s.push([a].into());
                 x(f, s);
             }
         }
@@ -201,7 +201,8 @@ fn s_(node: crate::ast::Node) -> (usize, usize) {
         | Op::Select
         | Op::Keep
         | Op::Join => (2, 1),
-        Op::Fold | Op::Scan => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (1, 1)).1,
+        Op::Fold => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (2, 1)).1,
+        Op::Scan => (assert_eq!(s_(children.next().unwrap()), (2, 1)), (1, 1)).1,
         Op::Length | Op::Iota | Op::Reverse | Op::Rise | Op::Fall | Op::Id => (1, 1),
         Op::Pop => (1, 0),
         Op::Fork => children.map(s_).fold((0, 0), fork),
