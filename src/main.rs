@@ -5,8 +5,7 @@ mod parser;
 fn main() {
     let mut source_code = String::new();
     let _: usize = std::io::Read::read_to_string(&mut std::io::stdin(), &mut source_code).unwrap();
-    let tree = parser::parse(lexer::lex(&source_code));
-    let mut s = Vec::new();
+    let (tree, mut s) = (parser::parse(lexer::lex(&source_code)), Vec::new());
     x(tree.root(), &mut s);
     for s in s {
         println!("{s:?}");
