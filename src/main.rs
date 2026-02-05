@@ -178,14 +178,13 @@ fn c(a: Vec<i32>, b: Vec<i32>) -> impl Iterator<Item = (i32, i32)> {
 }
 
 fn s_(node: crate::ast::Node) -> (usize, usize) {
+    let block = |(i_, o_), (i, o)| (i_ + usize::saturating_sub(i, o_), o + o_.saturating_sub(i));
     let fork = |(i1, o1), (i2, o2)| (usize::max(i1, i2), o1 + o2);
     let bracket = |(i1, o1), (i2, o2)| (i1 + i2, o1 + o2);
     let mut children = node.children();
 
     match node.op() {
-        Op::Block => children.map(s_).fold((0, 0), |(i_, o_), (i, o)| {
-            (i_ + i.saturating_sub(o_), o + o_.saturating_sub(i))
-        }),
+        Op::Block => children.map(s_).fold((0, 0), block),
         Op::Number(_) => unreachable!(),
         Op::Push => (0, 1),
         Op::Add
