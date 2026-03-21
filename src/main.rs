@@ -7,9 +7,7 @@ fn main() {
     let _: usize = std::io::Read::read_to_string(&mut std::io::stdin(), &mut source_code).unwrap();
     let (tree, mut s) = (parser::parse(lexer::lex(&source_code)), Vec::new());
     x(tree.root(), &mut s);
-    for s in s {
-        println!("{s:?}");
-    }
+    s.iter().for_each(&|s| println!("{s:?}"));
 }
 
 #[derive(Clone, Copy)]
@@ -66,11 +64,7 @@ enum Op {
 
 fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
     match node.op() {
-        Op::Block => {
-            for child in node.children() {
-                x(child, s);
-            }
-        }
+        Op::Block => node.children().for_each(|child| x(child, s)),
         Op::Number(_) => unreachable!(),
         Op::Push => {
             let ns = node.children().map(|it| match it.op() {
@@ -111,10 +105,8 @@ fn x(node: crate::ast::Node, s: &mut Vec<Vec<i32>>) {
         Op::Fall => grade_by(s, std::cmp::Reverse),
         Op::Fold => {
             let (f, [v]) = (node.children().next().unwrap(), g(s));
-            for a in v {
-                s.push([a].into());
-                x(f, s);
-            }
+            let fold = |a| (s.push([a].into()), x(f, s)).1;
+            v.into_iter().for_each(fold);
         }
         Op::Scan => {
             let (f, [v]) = (node.children().next().unwrap(), g(s));
