@@ -11,10 +11,8 @@ pub fn parse<'src>(tokens: impl Iterator<Item = &'src str>) -> ast::Tree {
     let mut b = ast::Builder::default();
     b.start_node(Op::Block);
     tokens.for_each(|token| match token {
-        "(" => b.start_node(Op::Block),
         "{" => (b.start_node(Op::Fork), b.start_node(Op::Block)).1,
         "[" => (b.start_node(Op::Bracket), b.start_node(Op::Block)).1,
-        ")" => finish_modifier(&mut b),
         "}" | "]" => (b.finish_node(), finish_modifier(&mut b)).1,
         "|" => (b.finish_node(), b.start_node(Op::Block)).1,
         "/" => b.start_node(Op::Fold),
